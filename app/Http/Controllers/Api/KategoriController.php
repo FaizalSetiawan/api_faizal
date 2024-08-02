@@ -3,162 +3,132 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Kategori;
 use Illuminate\Http\Request;
+use App\Models\Kategori;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class KategoriController extends Controller
 {
-    /**
-     * Menampilkan daftar kategori.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function index()
     {
-        $kategori = Kategori::latest()->get();
+        $kategori = Kategori::all();
         $res = [
             'success' => true,
-            'message' => 'Daftar Kategori',
+            'message' => 'Data Kategori',
             'data' => $kategori,
         ];
         return response()->json($res, 200);
     }
 
-    /**
-     * Menyimpan kategori baru.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function store(Request $request)
     {
-        // Validasi input
         $validator = Validator::make($request->all(), [
             'nama_kategori' => 'required|unique:kategoris',
         ]);
-
-        // Jika validasi gagal
         if ($validator->fails()) {
-            return response()->json([
+            $res = [
                 'success' => false,
                 'message' => 'Validasi Gagal',
                 'errors' => $validator->errors(),
-            ], 422);
+            ];
+            return response()->json($res, 422);
         }
 
         try {
-            // Simpan data kategori
             $kategori = new Kategori();
             $kategori->nama_kategori = $request->nama_kategori;
             $kategori->slug = Str::slug($request->nama_kategori);
             $kategori->save();
-
-            return response()->json([
+            $res = [
                 'success' => true,
-                'message' => 'Data berhasil dibuat',
+                'message' => 'Data Kategori Tersimpan',
                 'data' => $kategori,
-            ], 201);
+            ];
+            return response()->json($res, 200);
         } catch (\Exception $e) {
-            // Tangani kesalahan
-            return response()->json([
+            $res = [
                 'success' => false,
-                'message' => 'Terjadi Kesalahan',
+                'message' => 'Terjadi kesalahan',
                 'errors' => $e->getMessage(),
-            ], 500);
+            ];
+            return response()->json($res, 500);
         }
     }
 
-    /**
-     * Menampilkan detail kategori berdasarkan ID.
-     *
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function show($id)
     {
-        // Cari kategori berdasarkan ID
-        $kategori = Kategori::find($id);
-
-        // Jika kategori ditemukan
-        if ($kategori) {
+        try {
+            $kategori = Kategori::findOrFail($id);
             return response()->json([
                 'success' => true,
-                'message' => 'Detail Kategori',
+                'message' => 'detail kategori',
                 'data' => $kategori,
             ], 200);
-        }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'detail kategori',
+                'errors' => $e->getMessage(),
+            ], 404);
 
-        // Jika kategori tidak ditemukan
-        return response()->json([
-            'success' => false,
-            'message' => 'Kategori tidak ditemukan',
-        ], 404);
+        }
     }
 
-    /**
-     * Memperbarui kategori berdasarkan ID.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
+
     public function update(Request $request, $id)
     {
-        // Validasi input
         $validator = Validator::make($request->all(), [
-            'nama_kategori' => [
-                'required',
-                'unique:kategoris,nama_kategori,' . $id,
-            ],
+            'nama_kategori' => 'required',
         ]);
-
-        // Jika validasi gagal
         if ($validator->fails()) {
-            return response()->json([
+            $res = [
                 'success' => false,
                 'message' => 'Validasi Gagal',
                 'errors' => $validator->errors(),
-            ], 422);
+            ];
+            return response()->json($res, 422);
         }
 
         try {
-            // Cari dan perbarui kategori berdasarkan ID
             $kategori = Kategori::findOrFail($id);
             $kategori->nama_kategori = $request->nama_kategori;
             $kategori->slug = Str::slug($request->nama_kategori);
             $kategori->save();
+            $res = [
+                'success' => true,
+                'message' => 'Data Kategori Tersimpan',
+                'data' => $kategori,
+            ];
+            return response()->json($res, 200);
+        } catch (\Exception $e) {
+            $res = [
+                'success' => false,
+                'message' => 'Terjadi kesalahan',
+                'errors' => $e->getMessage(),
+            ];
+            return response()->json($res, 500);
+        }
+    }
 
+    public function destroy($id)
+    {
+        try {
+            $kategori = Kategori::findOrFail($id);
+            $delete->delete();
             return response()->json([
                 'success' => true,
-                'message' => 'Data berhasil diperbarui',
+                'message' => 'kategori' . $kategori->nama_kategori. 'berhasil dihapus',
                 'data' => $kategori,
             ], 200);
         } catch (\Exception $e) {
-            // Tangani kesalahan
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi Kesalahan',
+                'message' => 'detail kategori',
                 'errors' => $e->getMessage(),
-            ], 500);
-        }
-    }
-    public function destroy($id)
-    {
-        $kategori = Kategori::find($id);
-        $kategori->delete();
-        if ($kategori) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Data Berhasil Terhapus',
-            ], 200);
-        }
+            ], 404);
 
-        // Jika kategori tidak ditemukan
-        return response()->json([
-            'success' => false,
-            'message' => 'Kategori tidak ditemukan',
-        ], 404);
+        }
     }
+
 }
